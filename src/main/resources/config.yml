@@ -1,0 +1,27 @@
+#消息前缀
+prefix: '&a[HERO-PLANT]'
+
+#玩家数据存储
+#更改请重启!
+database:
+  enable: false
+  host: localhost
+  port: 3306
+  user: root
+  password: root
+  database: minecraft
+
+Plant:
+  #配置可种植区域（WorldGuard）
+  test_zone:
+    #该区域可以种植哪些
+    plant:
+      - wheat
+      - test
+    plant_block:
+      - DIRT
+
+#时间格式化
+h: '小时'
+m: '分钟'
+s: '秒'
