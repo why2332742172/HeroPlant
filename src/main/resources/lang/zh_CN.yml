@@ -1,3 +1,4 @@
 area-wrong: '在禁止种植的区域'
 block-wrong: '错误的种植方块'
 already-plant: '已有作物在该方块上'
+num-max: '当前区域可种植作物已达到上限!当前区域你最多可以种植:{0}个'

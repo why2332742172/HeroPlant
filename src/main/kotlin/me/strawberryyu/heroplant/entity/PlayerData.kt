@@ -5,6 +5,7 @@ import ink.ptms.adyeshach.impl.entity.trait.impl.setTraitTitle
 import ink.ptms.adyeshach.impl.entity.trait.impl.setTraitTitleHeight
 import me.strawberryyu.heroplant.HeroPlant.conf
 import me.strawberryyu.heroplant.hooks.AdyHook.isPlant
+import me.strawberryyu.heroplant.hooks.WorldGuardHooks
 import me.strawberryyu.heroplant.manager.PlantManager
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -27,6 +28,9 @@ class PlayerData(val player: Player) {
 
     private val plants = arrayListOf<Plant>()
 
+    //记录每个region里面的plant数量
+    val allRegionPlantsNum = mutableMapOf<String, Int>()
+
     /** 数据是否加载 */
     var isLoaded = false
         private set
@@ -34,8 +38,8 @@ class PlayerData(val player: Player) {
     init {
         submitAsync {
             plants += PlantManager.storages.get(player.uniqueId)
-            init()
             isLoaded = true
+            init()
         }
     }
 
@@ -49,6 +53,17 @@ class PlayerData(val player: Player) {
                     return@forEach
                 }
                 val loc = Location(world, plant.x, plant.y, plant.z, plant.yaw, plant.pitch)
+
+                //根据loc获得region 然后增加数量
+                val region = WorldGuardHooks.getRegionName(loc)
+                if (region != null) {
+                    if (allRegionPlantsNum[region] == null) {
+                        allRegionPlantsNum[region] = 1
+                    } else {
+                        allRegionPlantsNum[region] = allRegionPlantsNum[region]!! + 1
+                    }
+                }
+
                 val plantConfig = PlantManager.plantConfigs[plant.plantItem]
                 if (plantConfig == null) {
                     warning("Cannot find plant ${plant.plantItem}.")
@@ -56,7 +71,7 @@ class PlayerData(val player: Player) {
                 }
                 val growedTime = getGrowedTime(plant.plantUid)
                 if (growedTime != -1L) {
-                    submit(delay = 20){
+                    submit(delay = 20) {
                         plantConfig.spawn(player, loc, plant.plantUid, plant.plantItem, growedTime)
                     }
                 }
@@ -102,7 +117,7 @@ class PlayerData(val player: Player) {
                             it.getTag("plant_item_id").toString() == plant.plantItem
                 }
                 entity?.setCustomName(nowStage.stageName)
-                entity?.setTraitTitle(getTitle(nowStage,getTimeUntilNextPhase(plant.plantUid)).asList())
+                entity?.setTraitTitle(getTitle(nowStage, getTimeUntilNextPhase(plant.plantUid)).asList())
                 entity?.setTraitTitleHeight(nowStage.titleHeight)
             }
 
@@ -132,7 +147,7 @@ class PlayerData(val player: Player) {
                                 it.getTag("plant_item_id").toString() == plant.plantItem
                     }
                     entity?.setCustomName(nowStage.stageName)
-                    entity?.setTraitTitle(getTitle(nowStage,getTimeUntilNextPhase(plant.plantUid)).asList())
+                    entity?.setTraitTitle(getTitle(nowStage, getTimeUntilNextPhase(plant.plantUid)).asList())
                     entity?.setTraitTitleHeight(nowStage.titleHeight)
                 }
 
@@ -169,11 +184,39 @@ class PlayerData(val player: Player) {
                 true
             ).update()
         }
+        val region = WorldGuardHooks.getRegionName(location)
+        if (region != null) {
+            if (allRegionPlantsNum[region] == null) {
+                allRegionPlantsNum[region] = 1
+            } else {
+                allRegionPlantsNum[region] = allRegionPlantsNum[region]!! + 1
+            }
+        }
     }
 
     fun removePlant(uid: UUID) {
         val plant = plants.find { it.plantUid == uid && it.active }
         if (plant != null) {
+            //使得该region里面数目-1
+            val world = Bukkit.getWorld(plant.world)
+            if (world == null) {
+                warning("Cannot find world ${plant.world}.")
+            } else {
+                val loc = Location(world, plant.x, plant.y, plant.z, plant.yaw, plant.pitch)
+                val region = WorldGuardHooks.getRegionName(loc)
+                if (region != null) {
+                    if (allRegionPlantsNum[region] == null) {
+                        allRegionPlantsNum[region] = 0
+                    } else {
+                        val num = allRegionPlantsNum[region]!! - 1
+                        allRegionPlantsNum[region] = if (num >= 0) {
+                            num
+                        } else {
+                            0
+                        }
+                    }
+                }
+            }
             plant.active = false
             plant.update()
         }
@@ -185,7 +228,7 @@ class PlayerData(val player: Player) {
 
 
     fun getGrowedTime(plantUid: UUID): Long {
-        val plant = plants.find { it.plantUid == plantUid && it.active}
+        val plant = plants.find { it.plantUid == plantUid && it.active }
         return if (plant != null) {
             //获取它的种植时间 根据当前时间 计算时间差值 然后获得阶段
             val now = System.currentTimeMillis()
@@ -197,9 +240,9 @@ class PlayerData(val player: Player) {
         }
     }
 
-    fun getTimeUntilNextPhase(plantUid: UUID) : Long{
-        val plant = plants.find { it.plantUid == plantUid && it.active}
-        if(plant != null) {
+    fun getTimeUntilNextPhase(plantUid: UUID): Long {
+        val plant = plants.find { it.plantUid == plantUid && it.active }
+        if (plant != null) {
             //首先获得当前阶段 然后获得到下一阶段的时间
             //然后获得当前已经长了的时间
             //然后距离下一阶段的时间-已经长了的时间就是还剩下的时间
@@ -227,11 +270,11 @@ class PlayerData(val player: Player) {
 
     fun formatTime(millis: Long): String {
 
-        if(millis == -2L){
+        if (millis == -2L) {
             return ""
         }
 
-        if(millis == -1L){
+        if (millis == -1L) {
             return "错误"
         }
 

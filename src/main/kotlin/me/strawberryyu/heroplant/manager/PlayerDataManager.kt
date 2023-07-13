@@ -18,13 +18,7 @@ object PlayerDataManager {
 
         val playerData = allData[uuid]!!
 
-        return if(playerData.isLoaded){
-            playerData
-        }else{
-            player.tell("信息还未加载完毕!请重新进入服务器!")
-            warning("玩家${player.name}的信息还未加载完毕!请重新进入服务器!")
-            null
-        }
+        return playerData
     }
 
 }

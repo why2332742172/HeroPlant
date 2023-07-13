@@ -14,6 +14,7 @@ taboolib {
             name("WorldGuard")
             name("Adyeshach")
             name("Zaphkiel")
+            name("LuckPerms")
         }
     }
     install("common")

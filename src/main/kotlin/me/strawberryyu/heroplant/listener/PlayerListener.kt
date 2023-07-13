@@ -22,6 +22,8 @@ object PlayerListener {
             if (e.clickedBlock == null) {
                 return
             }
+            val section = e.itemStream.getZaphkielItem().config.getConfigurationSection("plant") ?: return
+
             val id = e.itemStream.getZaphkielId()
 
             val plantLoc = e.clickedBlock!!.location.add(0.0, 1.0, 0.0)
@@ -30,8 +32,9 @@ object PlayerListener {
                 return
             }
 
+
+
             val regionName = WorldGuardHooks.getRegionName(e.clickedBlock!!.location) ?: return
-            val section = e.itemStream.getZaphkielItem().config.getConfigurationSection("plant") ?: return
             //是种子 则直接种植
             if (e.item.isNotAir()) {
                 val plantConfig = PlantManager.getPlantConfig(id) ?: return

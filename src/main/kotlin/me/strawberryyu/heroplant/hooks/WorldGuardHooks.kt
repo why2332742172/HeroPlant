@@ -36,6 +36,14 @@ object WorldGuardHooks {
         val restrict = PlantManager.getRestrict(name)?:return false
         if(restrict.first.contains(plantId)){
             if(restrict.second.contains(groundBlockType.name)){
+
+                //add 判断玩家当前所在地区能种植的数量是否达到上限
+                val nowNum = data.allRegionPlantsNum[name]?:0
+                if(nowNum >= LuckPermsHooks.getMaxCanPlantNum(p,name)){
+                    p.tell(p.asLangText("num-max",LuckPermsHooks.getMaxCanPlantNum(p,name).toString()))
+                    return false
+                }
+
                 return true
             }
         }
